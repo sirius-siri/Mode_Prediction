@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Predict Class</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+            transition: box-shadow 0.3s;
+        }
+        .container:hover {
+            box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+        }
+        .form-control {
+            margin-bottom: 10px;
+            border-radius: 3px; /* Rounded corners for input fields */
+        }
+        .btn-primary {
+            background-color: #007BFF;
+            border: none;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        .prediction-popup {
+            display: none;
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #fff;
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Predict Class</h1>
+        <form method="POST" id="prediction-form">
+            <!-- Input fields -->
+            <div class="form-group">
+                <label for="EngineOff">EngineOff:</label>
+                <input type="text" class="form-control" name="EngineOff">
+            </div>
+            <div class="form-group">
+                <label for="Outside_rH">Outside rH (%):</label>
+                <input type="text" class="form-control" name="Outside_rH">
+            </div>
+            <div class="form-group">
+                <label for="Outside_Temp">Outside Temp (C):</label>
+                <input type="text" class="form-control" name="Outside_Temp">
+            </div>
+            <div class="form-group">
+                <label for="REC_GRADE">REC_GRADE:</label>
+                <input type="text" class="form-control" name="REC_GRADE">
+            </div>
+            <div class="form-group">
+                <label for="Electric_Motor_Power">Electric Motor Power (kW):</label>
+                <input type="text" class="form-control" name="Electric_Motor_Power">
+            </div>
+            <div class="form-group">
+                <label for="Generator_Power">Generator Power (kW):</label>
+                <input type="text" class="form-control" name="Generator_Power">
+            </div>
+            <div class="form-group">
+                <label for="Battery_Power">Battery Power (kW):</label>
+                <input type="text" class="form-control" name="Battery_Power">
+            </div>
+            <div class="form-group">
+                <label for="Total_System_Power">Total System Power (kW):</label>
+                <input type="text" class="form-control" name="Total_System_Power">
+            </div>
+            <div class="form-group">
+                <label for="Battery_Energy">Battery Energy (Wh/s):</label>
+                <input type="text" class="form-control" name="Battery_Energy">
+            </div>
+            <div class="form-group">
+                <label for="SPEED_MPH">SPEED_MPH:</label>
+                <input type="text" class="form-control" name="SPEED_MPH">
+            </div>
+            <div class="form-group">
+                <label for="SCN_RPM">SCN_RPM:</label>
+                <input type="text" class="form-control" name="SCN_RPM">
+            </div>
+            <div class="form-group">
+                <label for="SCN_SOC">SCN_SOC:</label>
+                <input type="text" class="form-control" name="SCN_SOC">
+            </div>
+            <div class="form-group">
+                <label for="Total_Torque_Out">Total Torque Out (Nm):</label>
+                <input type="text" class="form-control" name="Total_Torque_Out">
+            </div>
+            <div class="form-group">
+                <label for="RPM_out">RPM out (drive shaft):</label>
+                <input type="text" class="form-control" name="RPM_out">
+            </div>
+            <div class="form-group">
+                <label for="Fuel_Consumption">Fuel Consumption (mL/sec):</label>
+                <input type="text" class="form-control" name="Fuel_Consumption">
+            </div>
+            <!-- Add more input fields here -->
+            <button type="button" class="btn btn-primary" id="predict-button">Predict</button>
+        </form>
+    </div>
+
+    <!-- Prediction Popup -->
+    <div class="prediction-popup" id="prediction-popup">
+        <h2>Predicted Class:</h2>
+        <p class="lead" id="predicted-class"></p>
+        <button class="btn btn-primary" id="close-popup">Close</button>
+    </div>
+
+    <!-- JavaScript for Pop-up Effect and ML Prediction -->
+    <script>
+        document.getElementById('predict-button').addEventListener('click', function () {
+            const form = document.getElementById('prediction-form');
+            const predictedClass = document.getElementById('predicted-class');
+            const predictionPopup = document.getElementById('prediction-popup');
+
+            // Gather data from all input fields
+            const inputData = {
+                'EngineOff': parseFloat(form.querySelector('[name="EngineOff"]').value),
+                'Outside rH (%)': parseFloat(form.querySelector('[name="Outside_rH"]').value),
+                'Outside Temp (C)': parseFloat(form.querySelector('[name="Outside_Temp"]').value),
+                'REC_GRADE': parseFloat(form.querySelector('[name="REC_GRADE"]').value),
+                'Electric Motor Power (kW)': parseFloat(form.querySelector('[name="Electric_Motor_Power"]').value),
+                'Generator Power (kW)': parseFloat(form.querySelector('[name="Generator_Power"]').value),
+                'Battery Power (kW)': parseFloat(form.querySelector('[name="Battery_Power"]').value),
+                'Total System Power (kW)': parseFloat(form.querySelector('[name="Total_System_Power"]').value),
+                'Battery Energy (Wh/s)': parseFloat(form.querySelector('[name="Battery_Energy"]').value),
+                'SPEED_MPH': parseFloat(form.querySelector('[name="SPEED_MPH"]').value),
+                'SCN_RPM': parseFloat(form.querySelector('[name="SCN_RPM"]').value),
+                'SCN_SOC': parseFloat(form.querySelector('[name="SCN_SOC"]').value),
+                'Total Torque Out (Nm)': parseFloat(form.querySelector('[name="Total_Torque_Out"]').value),
+                'RPM out (drive shaft)': parseFloat(form.querySelector('[name="RPM_out"]').value),
+                'Fuel Consumption (mL/sec)': parseFloat(form.querySelector('[name="Fuel_Consumption"]').value)
+                // Add more fields and values here as needed
+            };
+
+            // Send the data to your server to make a prediction using your ML model (mode.h5)
+            fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(inputData),
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Display predicted class
+                predictedClass.textContent = data.predicted_class;
+
+                // Show the popup
+                predictionPopup.style.display = 'block';
+            })
+            .catch(error => console.error('Error:', error));
+        });
+
+        document.getElementById('close-popup').addEventListener('click', function () {
+            document.getElementById('prediction-popup').style.display = 'none';
+        });
+    </script>
+</body>
+</html>
